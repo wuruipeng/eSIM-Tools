@@ -1,7 +1,7 @@
 /**
  * Giffgaff DOM 管理模块
  */
-import { getCurrentLocale, onLocaleChange, tl } from '../i18n.js';
+import { getCurrentLocale, onLocaleChange, tl, t } from '../i18n.js';
 import HTMLSanitizer from '../html-sanitizer.js';
 
 class DOMManager {
@@ -378,7 +378,7 @@ class DOMManager {
     }
     const ukHint = document.getElementById('ukTimeHint');
     if (ukHint) {
-      ukHint.textContent = tl('giffgaff.app.service.ukTime', { time: ukTime });
+      ukHint.textContent = t('giffgaff.app.service.ukTime', { time: ukTime });
     }
 
     const alertElement = document.getElementById('serviceTimeAlert');
@@ -391,11 +391,11 @@ class DOMManager {
         if (badge) {
           badge.style.display = 'block';
           badge.className = 'service-time-action-badge success';
-          badge.textContent = tl('giffgaff.app.service.insideBadge');
+          badge.textContent = t('giffgaff.app.service.insideBadge');
         }
         const msg = document.getElementById('serviceTimeMessage');
         if (msg) {
-          msg.innerHTML = tl('giffgaff.app.service.inside');
+          msg.innerHTML = t('giffgaff.app.service.inside');
         }
       } else {
         alertElement.className = 'alert mb-4 service-time-alert alert-warning';
@@ -405,11 +405,11 @@ class DOMManager {
         if (badge) {
           badge.style.display = 'block';
           badge.className = 'service-time-action-badge warning';
-          badge.textContent = tl('giffgaff.app.service.outsideBadge');
+          badge.textContent = t('giffgaff.app.service.outsideBadge');
         }
         const msg = document.getElementById('serviceTimeMessage');
         if (msg) {
-          msg.innerHTML = tl('giffgaff.app.service.outside');
+          msg.innerHTML = t('giffgaff.app.service.outside');
         }
       }
     }

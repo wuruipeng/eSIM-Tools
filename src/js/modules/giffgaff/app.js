@@ -69,6 +69,17 @@ class GiffgaffApp {
    * 绑定事件监听器
    */
   bindEventListeners() {
+    // 选择登录方式卡片
+    const oauthCard = document.getElementById('oauthCard');
+    if (oauthCard) {
+      oauthCard.addEventListener('click', () => {
+        const oauthSection = document.getElementById('oauthLoginSection');
+        const cookieSection = document.getElementById('cookieLoginSection');
+        if (oauthSection) oauthSection.style.display = 'block';
+        if (cookieSection) cookieSection.style.display = 'none';
+      });
+    }
+
     // OAuth 登录
     this.dom.bindButtonClick('oauthLoginBtn', () => this.handleOAuthLogin());
 
