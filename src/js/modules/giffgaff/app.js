@@ -180,11 +180,7 @@ class GiffgaffApp {
       // 自动在新窗口打开授权链接
       window.open(authUrl, '_blank');
 
-      // 自动复制到剪贴板
-      await this.utils.copyToClipboard(authUrl);
-      this.utils.showToast('授权链接已复制到剪贴板');
-
-      this.dom.showStatus('oauthStatus', '请在浏览器中打开授权链接并完成登录', 'success');
+      this.dom.showStatus('oauthStatus', '授权链接已生成，请在弹出的窗口中完成登录', 'success');
 
       // 显示回调URL输入区域
       this.dom.showElement('oauthCallbackSection');
