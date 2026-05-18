@@ -384,18 +384,33 @@ class DOMManager {
     const alertElement = document.getElementById('serviceTimeAlert');
     if (alertElement) {
       if (isAvailable) {
-        alertElement.className = 'alert alert-success';
-        alertElement.innerHTML = `
-          <i class="fas fa-check-circle"></i>
-          <strong>${tl('服务可用')}</strong> - ${tl('当前时间')} ${HTMLSanitizer.escapeHtml(localTime)} / UK ${HTMLSanitizer.escapeHtml(ukTime)}（04:30-21:30）
-        `;
+        alertElement.className = 'alert mb-4 service-time-alert alert-success';
+        const icon = document.getElementById('serviceTimeIcon');
+        if (icon) { icon.className = 'fas fa-check-circle success'; }
+        const badge = document.getElementById('actionMessage');
+        if (badge) {
+          badge.style.display = 'block';
+          badge.className = 'service-time-action-badge success';
+          badge.textContent = tl('giffgaff.app.service.insideBadge');
+        }
+        const msg = document.getElementById('serviceTimeMessage');
+        if (msg) {
+          msg.innerHTML = tl('giffgaff.app.service.inside');
+        }
       } else {
-        alertElement.className = 'alert alert-warning';
-        alertElement.innerHTML = `
-          <i class="fas fa-exclamation-triangle"></i>
-          <strong>${tl('服务时间外')}</strong> - ${tl('当前时间')} ${HTMLSanitizer.escapeHtml(localTime)} / UK ${HTMLSanitizer.escapeHtml(ukTime)}
-          <br><small>${tl('SIM 交换服务窗口：英国时间 04:30 至 21:30。您仍可浏览信息，部分操作可能失败。')}</small>
-        `;
+        alertElement.className = 'alert mb-4 service-time-alert alert-warning';
+        const icon = document.getElementById('serviceTimeIcon');
+        if (icon) { icon.className = 'fas fa-exclamation-triangle warning'; }
+        const badge = document.getElementById('actionMessage');
+        if (badge) {
+          badge.style.display = 'block';
+          badge.className = 'service-time-action-badge warning';
+          badge.textContent = tl('giffgaff.app.service.outsideBadge');
+        }
+        const msg = document.getElementById('serviceTimeMessage');
+        if (msg) {
+          msg.innerHTML = tl('giffgaff.app.service.outside');
+        }
       }
     }
   }
