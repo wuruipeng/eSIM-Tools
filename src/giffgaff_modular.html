@@ -21,7 +21,7 @@
     <link rel="preconnect" href="https://publicapi.giffgaff.com" crossorigin>
 
     <!-- CSP策略 -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://browser.sentry-cdn.com https://challenges.cloudflare.com https://www.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' data: https://cdnjs.cloudflare.com; connect-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.google-analytics.com https://www.googletagmanager.com https://qrcode.show https://api.qrserver.com https://appapi.simyo.nl https://api.giffgaff.com https://id.giffgaff.com https://publicapi.giffgaff.com https://challenges.cloudflare.com https://www.google.com https://www.gstatic.com https://*.sentry.io; img-src 'self' data: https:; frame-src 'self' https://challenges.cloudflare.com https://www.google.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://browser.sentry-cdn.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' data: https://cdnjs.cloudflare.com; connect-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.google-analytics.com https://www.googletagmanager.com https://qrcode.show https://api.qrserver.com https://appapi.simyo.nl https://api.giffgaff.com https://id.giffgaff.com https://publicapi.giffgaff.com https://*.sentry.io; img-src 'self' data: https:;">
 
     <title>Giffgaff eSIM 工具</title>
     <link rel="manifest" href="/manifest.webmanifest">
@@ -41,11 +41,11 @@
     </noscript>
 
     <!-- Giffgaff专用样式 -->
-    <link rel="stylesheet" href="/src/giffgaff/styles/giffgaff-base.css">
-    <link rel="stylesheet" href="/src/giffgaff/styles/giffgaff-components.css">
-    <link rel="stylesheet" href="/src/giffgaff/styles/giffgaff-service-time.css">
-    <link rel="stylesheet" href="/src/giffgaff/styles/giffgaff-animations.css">
-    <link rel="stylesheet" href="/src/giffgaff/styles/giffgaff-responsive.css">
+    <link rel="stylesheet" href="/src/styles/giffgaff/giffgaff-base.css">
+    <link rel="stylesheet" href="/src/styles/giffgaff/giffgaff-components.css">
+    <link rel="stylesheet" href="/src/styles/giffgaff/giffgaff-service-time.css">
+    <link rel="stylesheet" href="/src/styles/giffgaff/giffgaff-animations.css">
+    <link rel="stylesheet" href="/src/styles/giffgaff/giffgaff-responsive.css">
     <link rel="stylesheet" href="/src/styles/notification.css">
 
 </head>
@@ -808,9 +808,6 @@
         })();
     </script>
 
-    <!-- 验证码加载脚本 -->
-    <script type="module" src="/src/js/captcha-client.js"></script>
-
     <!-- 性能优化脚本 -->
     <script src="/src/js/performance.js"></script>
 
@@ -829,7 +826,7 @@
     </script>
 
     <!-- 主应用脚本（模块化） -->
-    <script type="module" src="/src/giffgaff/js/giffgaff-app.js"></script>
+    <script type="module" src="/src/js/giffgaff.js"></script>
 
     <!-- 统一版权页脚 -->
     <script type="module" src="/src/js/bootstrap-footer.js"></script>

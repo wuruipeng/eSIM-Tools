@@ -10,9 +10,7 @@ const glob = require('glob');
 
 // 需要处理的目录
 const DIRS_TO_PROCESS = [
-  'src/js/modules',
-  'src/giffgaff/js/modules',
-  'src/simyo/js/modules'
+  'src/js/modules'
 ];
 
 // 需要排除的文件

@@ -1,54 +1,76 @@
 /**
  * Simyo 设备更换处理模块集成测试
+ *
+ * 测试 modular 版本的 handleDeviceChange 方法
  */
 
-import { deviceChangeHandler } from '../../src/simyo/js/modules/device-change-handler.js';
-import { stateManager } from '../../src/simyo/js/modules/state-manager.js';
+import simyoApp from '../../src/js/modules/simyo/app.js';
 
-describe('Simyo DeviceChangeHandler 集成覆盖', () => {
+describe('SimyoApp 设备更换流程', () => {
   beforeEach(() => {
-    stateManager.clearSession();
-    stateManager.set('sessionToken', 'test-session-token');
-    global.fetch.mockReset();
+    // 重置状态
+    simyoApp.state = {
+      token: 'test-token',
+      username: 'test-user',
+      phoneNumber: null,
+      esimData: null,
+      currentStep: 1
+    };
+
+    // 设置 DOM
+    document.body.innerHTML = `
+      <div id="esimStatus"></div>
+      <div id="esimDataDisplay"></div>
+      <div id="step3"></div>
+      <div id="step4"></div>
+    `;
+
+    // Mock API
+    simyoApp.api = {
+      requestDeviceChange: jest.fn()
+    };
+
+    // Mock 方法
+    simyoApp.showStatus = jest.fn();
+    simyoApp.navigateToStep = jest.fn();
+    simyoApp.displayESIMData = jest.fn();
+    simyoApp.saveSession = jest.fn();
   });
 
-  it('应完成设备更换主流程：applyNewEsim -> verifyCode', async () => {
-    global.fetch
-      .mockResolvedValueOnce({
-        json: async () => ({
-          success: true,
-          result: {
-            message: 'apply success',
-            remainingNumberOfTries: 3
-          }
-        })
-      })
-      .mockResolvedValueOnce({
-        json: async () => ({
-          success: true,
-          result: {
-            message: 'verify success',
-            remainingNumberOfTries: 2
-          }
-        })
-      });
+  it('应完成设备更换流程', async () => {
+    const mockEsimData = {
+      lpaString: 'LPA:1$smdp.example.com$ACTIVATION-CODE-123'
+    };
 
-    const applyResult = await deviceChangeHandler.applyNewEsim();
-    const verifyResult = await deviceChangeHandler.verifyCode('123456');
+    simyoApp.api.requestDeviceChange.mockResolvedValueOnce({
+      success: true,
+      esimData: mockEsimData
+    });
 
-    expect(applyResult.success).toBe(true);
-    expect(verifyResult.success).toBe(true);
-    expect(stateManager.get('validationCode')).toBe('123456');
-    expect(global.fetch).toHaveBeenCalledTimes(2);
-    expect(global.fetch).toHaveBeenNthCalledWith(
-      1,
-      'http://localhost:3000/api/simyo/settings/simcard',
-      expect.objectContaining({ method: 'POST' })
-    );
-    expect(global.fetch).toHaveBeenNthCalledWith(
-      2,
-      'http://localhost:3000/api/simyo/esim/verify-code',
-      expect.objectContaining({ method: 'POST' })
-    );
+    await simyoApp.handleDeviceChange();
+
+    expect(simyoApp.api.requestDeviceChange).toHaveBeenCalledWith('test-token');
+    expect(simyoApp.state.esimData).toEqual(mockEsimData);
+    expect(simyoApp.showStatus).toHaveBeenCalledWith('esimStatus', '设备更换成功！', 'success');
+    expect(simyoApp.navigateToStep).toHaveBeenCalledWith(4);
+  });
+
+  it('设备更换失败时应显示错误', async () => {
+    simyoApp.api.requestDeviceChange.mockResolvedValueOnce({
+      success: false,
+      message: '设备更换失败'
+    });
+
+    await simyoApp.handleDeviceChange();
+
+    expect(simyoApp.showStatus).toHaveBeenCalledWith('esimStatus', '处理失败: 设备更换失败', 'error');
+  });
+
+  it('未登录时应提示先完成认证', async () => {
+    simyoApp.state.token = null;
+
+    await simyoApp.handleDeviceChange();
+
+    expect(simyoApp.showStatus).toHaveBeenCalledWith('esimStatus', '请先完成认证', 'error');
   });
 });

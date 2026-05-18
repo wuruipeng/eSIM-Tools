@@ -43,7 +43,7 @@ eSIM-Tools 是一个 JAMstack 架构的 Web 应用，为已有 Giffgaff 和 Simy
 2. **Serverless 优先**: 所有后端逻辑通过 Netlify Functions 实现
 3. **BFF 模式**: Edge Functions 作为 Backend-For-Frontend 代理层，注入 ACCESS_KEY 并验证验证码
 4. **中间件统一**: 通过 `withAuth` 中间件统一处理鉴权、CORS、验证
-5. **双入口架构**: 同时维护 legacy (HTML 内联) 和 modular (Webpack 打包) 两套前端
+5. **Modular 架构**: 统一使用 Webpack 打包的模块化前端
 
 ### 部署流程
 
@@ -68,8 +68,8 @@ graph TD
     A --> G["scripts"];
     A --> H["tests"];
     A --> I["docs"];
-    A --> J["src/giffgaff (legacy)"];
-    A --> K["src/simyo (legacy)"];
+    A --> J["src/giffgaff_modular.html"];
+    A --> K["src/simyo_modular.html"];
 
     B --> B1["app.js - 主控制器"];
     B --> B2["oauth.js - OAuth PKCE"];
@@ -116,8 +116,10 @@ graph TD
 | **构建脚本** | `scripts/` | 构建、质量检查、安全扫描 (22 个脚本) | JavaScript/Shell |
 | **测试** | `tests/` | 单元测试 (Jest + jsdom) | JavaScript |
 | **文档** | `docs/` | 使用指南、API 参考、修复记录 | Markdown |
-| **Legacy Giffgaff** | `src/giffgaff/` | 旧版 Giffgaff HTML 页面 (保留兼容) | HTML/JS |
-| **Legacy Simyo** | `src/simyo/` | 旧版 Simyo HTML 页面 (保留兼容) | HTML/JS |
+| **Giffgaff 页面** | `src/giffgaff_modular.html` | Giffgaff eSIM 工具页面 | HTML |
+| **Simyo 页面** | `src/simyo_modular.html` | Simyo eSIM 工具页面 | HTML |
+| **Giffgaff 样式** | `src/styles/giffgaff/` | Giffgaff 专用 CSS | CSS |
+| **Simyo 样式** | `src/styles/simyo/` | Simyo 专用 CSS | CSS |
 
 ---
 

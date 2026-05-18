@@ -1,34 +1,39 @@
 /**
  * Simyo 主流程编排测试（设备更换）
+ *
+ * 测试 modular 版本的完整设备更换流程
  */
 
+import simyoApp from '../../src/js/modules/simyo/app.js';
+
 describe('SimyoApp 设备更换主流程自动化', () => {
-  let app;
-  let mockShowStatus;
-  let mockSkipDeviceChange;
-  let mockApplyNewEsim;
-  let mockVerifyCode;
+  beforeEach(() => {
+    // 重置状态
+    simyoApp.state = {
+      token: 'test-token',
+      username: 'test-user',
+      phoneNumber: null,
+      esimData: null,
+      currentStep: 1
+    };
 
-  beforeEach(async () => {
-    jest.resetModules();
-
+    // 设置 DOM
     document.body.innerHTML = `
+      <input id="phoneNumber" />
+      <input id="password" />
       <button id="applyNewEsimBtn"></button>
       <div id="applyNewEsimStatus"></div>
       <button id="verifyCodeBtn" disabled></button>
       <div id="verifyCodeStatus"></div>
-      <input id="validationCodeInput" />
+      <input id="smsCode" />
+      <div id="smsCodeSection" style="display: none;"></div>
       <button id="loginBtn"></button>
       <div id="loginStatus"></div>
-      <button id="getEsimBtn"></button>
       <div id="esimStatus"></div>
-      <div id="esimInfo"></div>
-      <button id="generateQrBtn"></button>
-      <div id="qrStatus"></div>
+      <div id="esimDataDisplay"></div>
       <button id="confirmInstallBtn"></button>
       <div id="confirmStatus"></div>
       <button id="clearSessionBtn"></button>
-      <button id="helpBtn"></button>
       <div id="step1"></div>
       <div id="step2"></div>
       <div id="step3"></div>
@@ -36,130 +41,130 @@ describe('SimyoApp 设备更换主流程自动化', () => {
       <div id="deviceChangeSteps"></div>
     `;
 
-    mockShowStatus = jest.fn();
-    mockSkipDeviceChange = jest.fn();
-    mockApplyNewEsim = jest.fn();
-    mockVerifyCode = jest.fn();
+    // Mock 方法
+    simyoApp.showStatus = jest.fn();
+    simyoApp.navigateToStep = jest.fn();
+    simyoApp.displayESIMData = jest.fn();
+    simyoApp.saveSession = jest.fn();
+    simyoApp.showToast = jest.fn();
 
-    jest.doMock('../../src/simyo/js/modules/ui-controller.js', () => ({
-      uiController: {
-        get elements() {
-          return {
-            loginBtn: document.getElementById('loginBtn'),
-            loginStatus: document.getElementById('loginStatus'),
-            getEsimBtn: document.getElementById('getEsimBtn'),
-            esimStatus: document.getElementById('esimStatus'),
-            esimInfo: document.getElementById('esimInfo'),
-            generateQrBtn: document.getElementById('generateQrBtn'),
-            qrStatus: document.getElementById('qrStatus'),
-            confirmInstallBtn: document.getElementById('confirmInstallBtn'),
-            confirmStatus: document.getElementById('confirmStatus'),
-            clearSessionBtn: document.getElementById('clearSessionBtn')
-          };
-        },
-        showStatus: (...args) => mockShowStatus(...args),
-        updateStatusPanel: jest.fn(),
-        showSection: jest.fn(),
-        updateSteps: jest.fn(),
-        showDeviceChangeSteps: jest.fn(),
-        skipDeviceChange: (...args) => mockSkipDeviceChange(...args),
-        showEsimInfo: jest.fn(),
-        showQRResult: jest.fn(),
-        resetUI: jest.fn()
-      }
-    }));
-
-    jest.doMock('../../src/simyo/js/modules/device-change-handler.js', () => ({
-      deviceChangeHandler: {
-        applyNewEsim: (...args) => mockApplyNewEsim(...args),
-        verifyCode: (...args) => mockVerifyCode(...args)
-      }
-    }));
-
-    jest.doMock('../../src/simyo/js/modules/auth-handler.js', () => ({
-      authHandler: {
-        login: jest.fn(),
-        isLoggedIn: jest.fn(() => true),
-        getSessionToken: jest.fn(() => 'token')
-      }
-    }));
-
-    jest.doMock('../../src/simyo/js/modules/esim-service.js', () => ({
-      esimService: {
-        getEsim: jest.fn(),
-        generateLPAString: jest.fn(),
-        confirmInstall: jest.fn()
-      }
-    }));
-
-    jest.doMock('../../src/simyo/js/modules/state-manager.js', () => ({
-      stateManager: {
-        subscribe: jest.fn(),
-        loadSession: jest.fn(() => false),
-        getState: jest.fn(() => ({ currentStep: 1 })),
-        get: jest.fn(() => 1),
-        set: jest.fn(),
-        setState: jest.fn(),
-        clearSession: jest.fn()
-      }
-    }));
-
-    jest.doMock('../../src/simyo/js/modules/utils.js', () => ({
-      copyToClipboard: jest.fn(),
-      showToast: jest.fn(),
-      openHelp: jest.fn(),
-      delay: jest.fn(() => Promise.resolve())
-    }));
-
-    jest.doMock('../../src/js/modules/i18n.js', () => ({
-      t: (key, params = {}) => {
-        if (!params || Object.keys(params).length === 0) return key;
-        return `${key}:${JSON.stringify(params)}`;
-      },
-      tl: (text) => text
-    }));
-
-    app = (await import('../../src/simyo/js/simyo-app.js')).default;
+    // Mock API
+    simyoApp.api = {
+      login: jest.fn(),
+      sendSMSCode: jest.fn(),
+      verifyCode: jest.fn(),
+      requestDeviceChange: jest.fn(),
+      confirmInstallation: jest.fn()
+    };
   });
 
-  it('applyNewEsim 成功后应引导用户输入验证码', async () => {
-    const codeInput = document.getElementById('validationCodeInput');
-    const verifyBtn = document.getElementById('verifyCodeBtn');
-    const focusSpy = jest.spyOn(codeInput, 'focus');
+  describe('handleLogin', () => {
+    it('登录成功后应跳转到步骤 2', async () => {
+      document.getElementById('phoneNumber').value = '0612345678';
+      document.getElementById('password').value = 'password123';
 
-    codeInput.value = '123456';
-    mockApplyNewEsim.mockResolvedValueOnce({
-      success: true,
-      message: 'apply-ok',
-      nextStep: 'next-tip'
+      simyoApp.api.login.mockResolvedValueOnce({
+        success: true,
+        token: 'new-token'
+      });
+
+      await simyoApp.handleLogin();
+
+      expect(simyoApp.api.login).toHaveBeenCalledWith('0612345678', 'password123');
+      expect(simyoApp.state.token).toBe('new-token');
+      expect(simyoApp.showStatus).toHaveBeenCalledWith('loginStatus', '登录成功！', 'success');
+      expect(simyoApp.navigateToStep).toHaveBeenCalledWith(2);
     });
 
-    await app.handleApplyNewEsim();
+    it('登录失败时应显示错误', async () => {
+      document.getElementById('phoneNumber').value = '0612345678';
+      document.getElementById('password').value = 'wrong';
 
-    expect(mockApplyNewEsim).toHaveBeenCalledTimes(1);
-    expect(focusSpy).toHaveBeenCalledTimes(1);
-    expect(verifyBtn.disabled).toBe(false);
-    expect(mockShowStatus).toHaveBeenCalledWith(
-      document.getElementById('applyNewEsimStatus'),
-      'apply-ok',
-      'success'
-    );
+      simyoApp.api.login.mockResolvedValueOnce({
+        success: false,
+        message: '用户名或密码错误'
+      });
+
+      await simyoApp.handleLogin();
+
+      expect(simyoApp.showStatus).toHaveBeenCalledWith('loginStatus', '登录失败: 用户名或密码错误', 'error');
+    });
   });
 
-  it('verifyCode 成功后应自动跳转到后续步骤', async () => {
-    const codeInput = document.getElementById('validationCodeInput');
-    codeInput.value = '123456';
+  describe('handleSendSMS', () => {
+    it('发送验证码成功后应显示验证码输入框', async () => {
+      simyoApp.api.sendSMSCode.mockResolvedValueOnce({
+        success: true
+      });
 
-    mockVerifyCode.mockResolvedValueOnce({
-      success: true,
-      message: 'verify-ok',
-      nextStep: 'go-next'
+      await simyoApp.handleSendSMS();
+
+      expect(simyoApp.api.sendSMSCode).toHaveBeenCalledWith('test-token');
+      expect(simyoApp.showStatus).toHaveBeenCalledWith('applyNewEsimStatus', '验证码已发送到您的手机', 'success');
+    });
+  });
+
+  describe('handleVerifySMS', () => {
+    it('验证成功后应跳转到步骤 3', async () => {
+      document.getElementById('smsCode').value = '123456';
+
+      simyoApp.api.verifyCode.mockResolvedValueOnce({
+        success: true
+      });
+
+      await simyoApp.handleVerifySMS();
+
+      expect(simyoApp.api.verifyCode).toHaveBeenCalledWith('test-token', '123456');
+      expect(simyoApp.showStatus).toHaveBeenCalledWith('verifyCodeStatus', '验证成功！', 'success');
+      expect(simyoApp.navigateToStep).toHaveBeenCalledWith(3);
     });
 
-    await app.handleVerifyCode();
+    it('未输入验证码时应提示', async () => {
+      document.getElementById('smsCode').value = '';
 
-    expect(mockVerifyCode).toHaveBeenCalledWith('123456');
-    expect(mockSkipDeviceChange).toHaveBeenCalledTimes(1);
+      await simyoApp.handleVerifySMS();
+
+      expect(simyoApp.showStatus).toHaveBeenCalledWith('verifyCodeStatus', '请输入验证码', 'error');
+    });
+  });
+
+  describe('handleDeviceChange', () => {
+    it('设备更换成功后应显示 eSIM 数据', async () => {
+      const mockEsimData = {
+        lpaString: 'LPA:1$smdp.example.com$ACTIVATION-CODE-123'
+      };
+
+      simyoApp.api.requestDeviceChange.mockResolvedValueOnce({
+        success: true,
+        esimData: mockEsimData
+      });
+
+      await simyoApp.handleDeviceChange();
+
+      expect(simyoApp.state.esimData).toEqual(mockEsimData);
+      expect(simyoApp.displayESIMData).toHaveBeenCalledWith(mockEsimData);
+      expect(simyoApp.navigateToStep).toHaveBeenCalledWith(4);
+    });
+  });
+
+  describe('handleConfirmInstall', () => {
+    it('确认安装成功后应显示完成消息', async () => {
+      simyoApp.state.esimData = {
+        lpaString: 'LPA:1$smdp.example.com$ACTIVATION-CODE-123'
+      };
+
+      simyoApp.api.confirmInstallation.mockResolvedValueOnce({
+        success: true
+      });
+
+      // Mock showCompletionMessage
+      simyoApp.showCompletionMessage = jest.fn();
+
+      await simyoApp.handleConfirmInstall();
+
+      expect(simyoApp.api.confirmInstallation).toHaveBeenCalledWith('test-token');
+      expect(simyoApp.showStatus).toHaveBeenCalledWith('confirmStatus', 'eSIM 安装确认成功！', 'success');
+      expect(simyoApp.showCompletionMessage).toHaveBeenCalled();
+    });
   });
 });
-

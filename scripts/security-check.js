@@ -71,7 +71,7 @@ function checkDependencies() {
   Object.keys(dependencies).forEach(pkgName => {
     const pkg = dependencies[pkgName];
     const version = pkg.version;
-    
+
     if (knownVulnerabilities[pkgName]) {
       const vuln = knownVulnerabilities[pkgName];
       if (isVulnerable(version, vuln.versions)) {
@@ -92,16 +92,16 @@ function checkDependencies() {
 // 生成安全报告
 function generateSecurityReport() {
   BuildLogger.log('🔒 安全检查报告\n');
-  
+
   const vulnerabilities = checkDependencies();
-  
+
   if (vulnerabilities.length === 0) {
     BuildLogger.success(' 未发现已知的安全漏洞');
     return;
   }
 
   BuildLogger.warn(`  发现 ${vulnerabilities.length} 个潜在安全漏洞:\n`);
-  
+
   vulnerabilities.forEach((vuln, index) => {
     BuildLogger.log(`${index + 1}. ${vuln.package}@${vuln.version}`);
     BuildLogger.log(`   严重程度: ${vuln.severity}`);
@@ -118,7 +118,7 @@ function generateSecurityReport() {
 // 检查开发环境安全配置
 function checkSecurityConfig() {
   BuildLogger.log('\n🔧 安全配置检查:\n');
-  
+
   // 检查Helmet配置
   const serverPath = path.join(__dirname, '../server.js');
   if (fs.existsSync(serverPath)) {
@@ -143,8 +143,8 @@ function checkSecurityConfig() {
   // 检查Content Security Policy
   const htmlFiles = [
     'index.html',
-    'src/giffgaff/giffgaff_modular.html',
-    'src/simyo/simyo_modular.html'
+    'src/giffgaff_modular.html',
+    'src/simyo_modular.html'
   ];
 
   htmlFiles.forEach(file => {
@@ -164,7 +164,7 @@ function checkSecurityConfig() {
 function main() {
   generateSecurityReport();
   checkSecurityConfig();
-  
+
   BuildLogger.log('\n📋 安全最佳实践:');
   BuildLogger.log('1. 定期更新依赖包');
   BuildLogger.log('2. 使用npm audit检查安全漏洞');
@@ -177,4 +177,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { checkDependencies, generateSecurityReport }; 
+module.exports = { checkDependencies, generateSecurityReport };

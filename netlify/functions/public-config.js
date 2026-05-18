@@ -1,4 +1,4 @@
-const DEFAULT_PROVIDER = 'turnstile';
+const DEFAULT_PROVIDER = 'off';
 
 const handler = async () => {
   const providerEnv = (process.env.CAPTCHA_PROVIDER || DEFAULT_PROVIDER).toLowerCase();

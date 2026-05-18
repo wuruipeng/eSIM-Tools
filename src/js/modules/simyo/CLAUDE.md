@@ -59,5 +59,5 @@ SimyoState {
 - `src/js/simyo.js` - Webpack 入口
 - `src/js/modules/simyo/app.js` - 主控制器
 - `src/js/modules/simyo/api.js` - API 交互
-- `src/simyo/simyo_modular.html` - 页面模板
-- `src/simyo/js/` - Legacy 模块 (保留兼容)
+- `src/simyo_modular.html` - 页面模板
+- `src/styles/simyo/` - 样式文件

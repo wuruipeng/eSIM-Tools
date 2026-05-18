@@ -16,7 +16,7 @@ class GiffgaffApp {
     this.api = apiManager;
     this.utils = utils;
     this.dom = domManager;
-    
+
     this.initialized = false;
   }
 
@@ -25,23 +25,23 @@ class GiffgaffApp {
    */
   async init() {
     if (this.initialized) return;
-    
+
     try {
       await captchaManager.init();
     } catch (error) {
       console.error('[Giffgaff App] captcha init failed', error);
     }
-    
+
     try {
       // 添加动画样式
       this.utils.addAnimationStyles();
-      
+
       // 初始化 DOM 管理器
       this.dom.init();
-      
+
       // 绑定事件监听器
       this.bindEventListeners();
-      
+
       // 加载会话
       const sessionRestored = this.state.loadSession();
       if (sessionRestored) {
@@ -49,16 +49,16 @@ class GiffgaffApp {
         this.dom.navigateToStep(targetStep);
         this.utils.showToast('会话已恢复');
       }
-      
+
       // 更新状态显示
       this.updateStatusDisplay();
-      
+
       // 启动服务时间检查
       this.startServiceTimeCheck();
-      
+
       this.initialized = true;
       // 初始化完成
-      
+
     } catch (error) {
       console.error('初始化失败:', error);
       this.utils.showToast('初始化失败，请刷新页面重试', 5000);
@@ -71,30 +71,42 @@ class GiffgaffApp {
   bindEventListeners() {
     // OAuth 登录
     this.dom.bindButtonClick('oauthLoginBtn', () => this.handleOAuthLogin());
-    
+
     // 处理回调
     this.dom.bindButtonClick('processCallbackBtn', () => this.handleOAuthCallback());
-    
+
     // Cookie 验证
     this.dom.bindButtonClick('verifyCookieBtn', () => this.handleCookieVerification());
-    
+
     // 发送邮件验证码
     this.dom.bindButtonClick('sendEmailBtn', () => this.handleSendEmail());
-    
+
     // 验证邮件验证码
     this.dom.bindButtonClick('verifyEmailBtn', () => this.handleVerifyEmail());
-    
+
     // 获取会员信息
     this.dom.bindButtonClick('getMemberBtn', () => this.handleGetMember());
-    
+
     // 预订 eSIM
     this.dom.bindButtonClick('reserveESimBtn', () => this.handleReserveESIM());
-    
+
     // 获取 eSIM Token
     this.dom.bindButtonClick('getESimTokenBtn', () => this.handleGetESIMToken());
-    
+
+    // SMS 激活流程
+    this.dom.bindButtonClick('smsInlineSendBtn', () => this.handleSmsSend());
+    this.dom.bindButtonClick('smsInlineVerifyBtn', () => this.handleSmsVerify());
+
+    // 手动 eSIM 保存
+    this.dom.bindButtonClick('manualSaveAndNextBtn', () => this.handleManualEsimSave());
+
     // 清除会话
     this.dom.bindButtonClick('clearSessionBtn', () => this.handleClearSession());
+
+    // Cookie 过期事件监听
+    window.addEventListener('cookieExpired', (e) => this.handleCookieExpired(e));
+
+    console.log('[Giffgaff] 事件监听器绑定完成');
   }
 
   /**
@@ -102,32 +114,33 @@ class GiffgaffApp {
    */
   async handleOAuthLogin() {
     try {
+      console.log('[Giffgaff] handleOAuthLogin: 开始 OAuth 登录');
       if (!this.utils.isServiceTimeAvailable()) {
         const shouldContinue = await this.dom.showServiceTimeWarning();
         if (!shouldContinue) return;
       }
-      
+
       this.dom.showStatus('oauthStatus', '正在生成授权链接...', 'info');
-      
+
       // 生成 PKCE 参数
       this.state.codeVerifier = this.oauth.generateCodeVerifier();
       // 同时生成并持久化 OAuth state，供回调校验
       this.state.oauthState = this.oauth.generateState();
       const authUrl = await this.oauth.buildAuthorizationUrl(this.state.codeVerifier, this.state.oauthState);
-      
+
       // 显示授权 URL
       this.dom.setValue('authUrlDisplay', authUrl);
       this.dom.showElement('authUrlContainer');
-      
+
       // 自动复制到剪贴板
       await this.utils.copyToClipboard(authUrl);
       this.utils.showToast('授权链接已复制到剪贴板');
-      
+
       this.dom.showStatus('oauthStatus', '请在浏览器中打开授权链接并完成登录', 'success');
-      
+
       // 保存状态
       this.state.saveSession();
-      
+
     } catch (error) {
       console.error('OAuth登录失败:', error);
       this.dom.showStatus('oauthStatus', `登录失败: ${error.message}`, 'error');
@@ -139,20 +152,21 @@ class GiffgaffApp {
    */
   async handleOAuthCallback() {
     try {
+      console.log('[Giffgaff] handleOAuthCallback: 开始处理回调');
       const callbackUrl = this.dom.getValue('callbackUrl');
       if (!callbackUrl) {
         this.dom.showStatus('oauthStatus', '请输入回调URL', 'error');
         return;
       }
-      
+
       this.dom.showStatus('oauthStatus', '正在处理回调...', 'info');
-      
+
       // 提取授权码
       const code = this.oauth.extractCodeFromCallback(callbackUrl);
       if (!code) {
         throw new Error('无法从回调URL中提取授权码');
       }
-      
+
       // 可选：校验回调中的 state（标准 URL 才有）
       try {
         const url = new URL(callbackUrl);
@@ -165,18 +179,18 @@ class GiffgaffApp {
       // 交换访问令牌（服务端代办）
       const tokenData = await this.oauth.exchangeToken(code, this.state.codeVerifier);
       this.state.accessToken = tokenData.access_token;
-      
+
       // 保存状态并导航到下一步
       this.state.saveSession();
       this.updateStatusDisplay();
-      
+
       this.dom.showStatus('oauthStatus', 'OAuth认证成功！', 'success');
       this.utils.showToast('认证成功，正在跳转到下一步...');
-      
+
       setTimeout(() => {
         this.dom.navigateToStep(2);
       }, 1500);
-      
+
     } catch (error) {
       console.error('处理OAuth回调失败:', error);
       this.dom.showStatus('oauthStatus', `处理失败: ${error.message}`, 'error');
@@ -188,36 +202,37 @@ class GiffgaffApp {
    */
   async handleCookieVerification() {
     try {
+      console.log('[Giffgaff] handleCookieVerification: 开始 Cookie 验证');
       if (!this.utils.isServiceTimeAvailable()) {
         const shouldContinue = await this.dom.showServiceTimeWarning();
         if (!shouldContinue) return;
       }
-      
+
       const cookie = this.dom.getValue('cookieInput');
       if (!cookie) {
         this.dom.showStatus('cookieStatus', '请输入Cookie', 'error');
         return;
       }
-      
+
       this.dom.showStatus('cookieStatus', '正在验证Cookie...', 'info');
       const loading = this.utils.showLoading('正在验证Cookie...');
-      
+
       const result = await this.api.verifyCookie(cookie);
-      
+
       this.utils.hideLoading(loading);
-      
+
       if (result.valid) {
         // 保存认证信息
         this.state.accessToken = result.accessToken;
         this.state.emailSignature = result.emailSignature; // 仍可能为 null
         this.state.memberId = result.memberId || this.state.memberId;
-        
+
         this.state.saveSession();
         this.updateStatusDisplay();
-        
+
         this.dom.showStatus('cookieStatus', 'Cookie验证成功！', 'success');
         this.utils.showToast('验证成功，正在跳转...');
-        
+
         // 根据获得的信息决定跳转步骤
         const targetStep = this.state.getTargetStep();
         setTimeout(() => {
@@ -226,7 +241,7 @@ class GiffgaffApp {
       } else {
         throw new Error(result.message || 'Cookie验证失败');
       }
-      
+
     } catch (error) {
       console.error('Cookie验证失败:', error);
       const msg =
@@ -247,22 +262,22 @@ class GiffgaffApp {
         const shouldContinue = await this.dom.showServiceTimeWarning();
         if (!shouldContinue) return;
       }
-      
+
       if (!this.state.accessToken) {
         this.dom.showStatus('emailStatus', '请先完成OAuth认证', 'error');
         return;
       }
-      
+
       this.dom.showStatus('emailStatus', '正在发送验证码...', 'info');
-      
+
       const data = await this.api.sendMFAChallenge(this.state.accessToken);
       this.state.emailCodeRef = data.ref;
-      
+
       this.dom.showStatus('emailStatus', '验证码已发送到您的邮箱', 'success');
       this.dom.showElement('emailCodeSection');
-      
+
       this.state.saveSession();
-      
+
     } catch (error) {
       console.error('发送邮件失败:', error);
       this.dom.showStatus('emailStatus', `发送失败: ${error.message}`, 'error');
@@ -279,35 +294,141 @@ class GiffgaffApp {
         this.dom.showStatus('emailStatus', '请输入验证码', 'error');
         return;
       }
-      
+
       if (!this.state.emailCodeRef) {
         this.dom.showStatus('emailStatus', '请先发送验证码', 'error');
         return;
       }
-      
+
       this.dom.showStatus('emailStatus', '正在验证...', 'info');
-      
+
       const data = await this.api.validateMFACode(
         this.state.accessToken,
         this.state.emailCodeRef,
         code
       );
-      
+
       this.state.emailSignature = data.signature;
-      
+
       this.dom.showStatus('emailStatus', '验证成功！', 'success');
       this.utils.showToast('邮件验证成功');
-      
+
       this.state.saveSession();
       this.updateStatusDisplay();
-      
+
       setTimeout(() => {
         this.dom.navigateToStep(3);
       }, 1500);
-      
+
     } catch (error) {
       console.error('验证邮件失败:', error);
       this.dom.showStatus('emailStatus', `验证失败: ${error.message}`, 'error');
+    }
+  }
+
+  /**
+   * 发送 SMS 验证码（用于 SIM 交换激活）
+   */
+  async handleSmsSend() {
+    const sendBtn = document.getElementById('smsInlineSendBtn');
+
+    try {
+      sendBtn.innerHTML = '<span class="loading"></span> 发送中...';
+      sendBtn.disabled = true;
+
+      this.dom.showStatus('smsInlineStatus', '正在发送短信验证码...', 'info');
+      console.log('[Giffgaff] handleSmsSend: 开始发送 SMS 验证码', {
+        hasAccessToken: !!this.state.accessToken,
+        hasEmailSignature: !!this.state.emailSignature,
+        memberId: this.state.memberId
+      });
+
+      // 使用 MFA challenge 发送 SMS
+      const data = await this.api.sendMFAChallenge(this.state.accessToken);
+      this.state.emailCodeRef = data.ref;
+
+      this.dom.showStatus('smsInlineStatus', '短信验证码已发送', 'success');
+      const codeSection = document.getElementById('smsCodeInputSection');
+      if (codeSection) codeSection.style.display = 'block';
+
+      this.state.saveSession();
+      console.log('[Giffgaff] handleSmsSend: SMS 验证码发送成功', { ref: data.ref?.slice(0, 8) + '...' });
+
+    } catch (error) {
+      console.error('[Giffgaff] handleSmsSend: 发送失败', error);
+      this.dom.showStatus('smsInlineStatus', `发送失败: ${error.message}`, 'error');
+    } finally {
+      sendBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i> 发送验证码';
+      sendBtn.disabled = false;
+    }
+  }
+
+  /**
+   * 验证 SMS 验证码并执行完整激活流程
+   */
+  async handleSmsVerify() {
+    const verifyBtn = document.getElementById('smsInlineVerifyBtn');
+    const codeInput = document.getElementById('smsInlineCode');
+
+    const code = (codeInput?.value ?? '').trim();
+
+    if (!/^\d{6}$/.test(code)) {
+      this.dom.showStatus('smsInlineStatus', '请输入6位数字验证码', 'error');
+      return;
+    }
+
+    try {
+      verifyBtn.innerHTML = '<span class="loading"></span> 验证中...';
+      verifyBtn.disabled = true;
+
+      this.dom.showStatus('smsInlineStatus', '正在验证并执行激活流程...', 'info');
+      console.log('[Giffgaff] handleSmsVerify: 开始 SMS 激活流程', {
+        code: code.slice(0, 2) + '****',
+        hasAccessToken: !!this.state.accessToken,
+        hasEmailSignature: !!this.state.emailSignature,
+        emailCodeRef: this.state.emailCodeRef?.slice(0, 8) + '...',
+        memberId: this.state.memberId,
+        phoneNumber: this.state.phoneNumber
+      });
+
+      // 执行完整的 SMS 激活流程
+      const result = await this.api.smsActivateFlow({
+        ref: this.state.emailCodeRef,
+        code,
+        accessToken: this.state.accessToken,
+        cookie: undefined, // 由 api.js 内部从 secureStorage 读取
+        memberId: this.state.memberId,
+        ssn: this.state.esimSSN,
+        activationCode: this.state.esimActivationCode
+      });
+
+      console.log('[Giffgaff] handleSmsVerify: SMS 激活流程完成', {
+        success: result?.success,
+        hasLpa: !!result?.lpaString,
+        ssn: result?.ssn?.slice(0, 8) + '...'
+      });
+
+      // 更新状态
+      if (result?.ssn) this.state.esimSSN = result.ssn;
+      if (result?.activationCode) this.state.esimActivationCode = result.activationCode;
+      if (result?.lpaString) this.state.lpaString = result.lpaString;
+
+      this.state.saveSession();
+      this.dom.showStatus('smsInlineStatus', 'eSIM 激活成功！', 'success');
+      this.utils.showToast('激活成功，正在跳转...');
+
+      // 显示结果并跳转
+      this.dom.displayESIMResult(this.state);
+      setTimeout(() => {
+        this.dom.navigateToStep(6);
+      }, 1500);
+
+    } catch (error) {
+      console.error('[Giffgaff] handleSmsVerify: 激活失败', error);
+      this.dom.showStatus('smsInlineStatus', `激活失败: ${error.message}`, 'error');
+    } finally {
+      verifyBtn.innerHTML = '<i class="fas fa-check me-2"></i> 验证并继续激活';
+      verifyBtn.disabled = false;
     }
   }
 
@@ -320,16 +441,16 @@ class GiffgaffApp {
         this.dom.showStatus('memberStatus', '请先完成认证', 'error');
         return;
       }
-      
+
       this.dom.showStatus('memberStatus', '正在获取会员信息...', 'info');
-      
+
       let data = await this.api.getMemberProfile(this.state.accessToken);
-      
+
       if (data.data?.memberProfile) {
         this.state.memberId = data.data.memberProfile.id;
         this.state.memberName = data.data.memberProfile.memberName;
       }
-      
+
       if (data.data?.sim) {
         this.state.phoneNumber = data.data.sim.phoneNumber;
       }
@@ -342,19 +463,19 @@ class GiffgaffApp {
           this.state.memberName = data.data.memberProfile.memberName;
         }
       }
-      
+
       // 显示会员信息
       this.dom.displayMemberInfo(this.state);
-      
+
       this.dom.showStatus('memberStatus', '获取成功！', 'success');
-      
+
       this.state.saveSession();
       this.updateStatusDisplay();
-      
+
       setTimeout(() => {
         this.dom.navigateToStep(4);
       }, 1500);
-      
+
     } catch (error) {
       console.error('获取会员信息失败:', error);
       this.dom.showStatus('memberStatus', `获取失败: ${error.message}`, 'error');
@@ -370,40 +491,40 @@ class GiffgaffApp {
         const shouldContinue = await this.dom.showServiceTimeWarning();
         if (!shouldContinue) return;
       }
-      
+
       if (!this.state.memberId || !this.state.emailSignature) {
         this.dom.showStatus('reserveStatus', '请先完成前面的步骤', 'error');
         return;
       }
-      
+
       this.dom.showStatus('reserveStatus', '正在预订eSIM...', 'info');
-      
+
       const data = await this.api.reserveESIM(
         this.state.accessToken,
         this.state.memberId,
         this.state.emailSignature
       );
-      
+
       if (data.data?.reserveESim?.esim) {
         const esim = data.data.reserveESim.esim;
         this.state.esimSSN = esim.ssn;
         this.state.esimActivationCode = esim.activationCode;
         this.state.esimDeliveryStatus = esim.deliveryStatus;
-        
+
         // 显示 eSIM 信息
         this.dom.displayESIMInfo(this.state);
-        
+
         this.dom.showStatus('reserveStatus', 'eSIM预订成功！', 'success');
-        
+
         this.state.saveSession();
-        
+
         setTimeout(() => {
           this.dom.navigateToStep(5);
         }, 1500);
       } else {
         throw new Error('预订响应中没有eSIM信息');
       }
-      
+
     } catch (error) {
       console.error('预订eSIM失败:', error);
       this.dom.showStatus('reserveStatus', `预订失败: ${error.message}`, 'error');
@@ -419,35 +540,84 @@ class GiffgaffApp {
         this.dom.showStatus('tokenStatus', '请先预订eSIM', 'error');
         return;
       }
-      
+
       this.dom.showStatus('tokenStatus', '正在获取eSIM下载信息...', 'info');
-      
+
       const data = await this.api.getESIMToken(
         this.state.accessToken,
         this.state.esimSSN
       );
-      
+
       if (data.data?.eSimDownloadToken) {
         this.state.lpaString = data.data.eSimDownloadToken.lpaString;
-        
+
         // 显示结果
         this.dom.displayESIMResult(this.state);
-        
+
         this.dom.showStatus('tokenStatus', '获取成功！', 'success');
-        
+
         this.state.saveSession();
-        
+
         setTimeout(() => {
           this.dom.navigateToStep(6);
         }, 1500);
       } else {
         throw new Error('响应中没有下载信息');
       }
-      
+
     } catch (error) {
       console.error('获取eSIM Token失败:', error);
       this.dom.showStatus('tokenStatus', `获取失败: ${error.message}`, 'error');
     }
+  }
+
+  /**
+   * 手动保存 eSIM 信息
+   */
+  handleManualEsimSave() {
+    const activationInput = document.getElementById('manualActivationCode');
+    const ssnInput = document.getElementById('manualSSN');
+
+    const activationCode = (activationInput?.value ?? '').trim();
+    const ssn = (ssnInput?.value ?? '').trim();
+
+    console.log('[Giffgaff] handleManualEsimSave: 手动保存 eSIM', {
+      activationCode: activationCode?.slice(0, 8) + '...',
+      hasSSN: !!ssn
+    });
+
+    if (!activationCode) {
+      this.dom.showStatus('esimReserveStatus', '请输入激活码', 'error');
+      return;
+    }
+
+    this.state.esimActivationCode = activationCode;
+    this.state.esimSSN = ssn || this.state.esimSSN;
+    this.state.esimDeliveryStatus = 'RESERVED';
+
+    // 更新显示
+    const title = document.getElementById('esimStatusTitle');
+    if (title) title.textContent = 'eSIM 已预留';
+
+    const displayActivationCode = document.getElementById('displayActivationCode');
+    const displaySSN = document.getElementById('displaySSN');
+    if (displayActivationCode) displayActivationCode.textContent = activationCode;
+    if (displaySSN && ssn) displaySSN.textContent = ssn;
+
+    const info = document.getElementById('esimInfoDisplay');
+    if (info) info.style.display = 'block';
+
+    this.state.saveSession();
+    this.dom.navigateToStep(5);
+  }
+
+  /**
+   * Cookie 过期处理
+   */
+  handleCookieExpired(event) {
+    console.log('[Giffgaff] handleCookieExpired: Cookie 已过期', event?.detail);
+    this.utils.showToast('登录已过期，请重新登录', 5000);
+    this.dom.navigateToStep(1);
   }
 
   /**

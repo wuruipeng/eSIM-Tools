@@ -77,5 +77,5 @@ AppState {
 - `src/js/modules/giffgaff/api.js` - API 交互
 - `src/js/modules/giffgaff/utils.js` - 工具函数
 - `src/js/modules/giffgaff/dom.js` - DOM 操作
-- `src/giffgaff/giffgaff_modular.html` - 页面模板
-- `src/giffgaff/js/` - Legacy 模块 (保留兼容)
+- `src/giffgaff_modular.html` - 页面模板
+- `src/styles/giffgaff/` - 样式文件

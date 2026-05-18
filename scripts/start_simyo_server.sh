@@ -25,12 +25,12 @@ fi
 if [ ! -d "node_modules" ]; then
     echo "📦 安装依赖包..."
     npm install
-    
+
     if [ $? -ne 0 ]; then
         echo "❌ 依赖安装失败，请检查网络连接或npm配置"
         exit 1
     fi
-    
+
     echo "✅ 依赖安装完成"
 else
     echo "✅ 依赖包已存在"
@@ -43,4 +43,4 @@ echo "💡 按 Ctrl+C 停止服务器"
 echo ""
 
 # 启动服务器
-node simyo_proxy_server.js
+node "$(dirname "$0")/simyo_proxy_server.js"

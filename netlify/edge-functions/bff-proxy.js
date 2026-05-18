@@ -32,8 +32,8 @@ export default async (request, context) => {
   }
 
   // 验证码配置
-  const providerEnv = (typeof Deno !== 'undefined' && Deno.env && Deno.env.get('CAPTCHA_PROVIDER')) || 'turnstile';
-  const provider = ['turnstile', 'recaptcha', 'off'].includes(providerEnv.toLowerCase()) ? providerEnv.toLowerCase() : 'turnstile';
+  const providerEnv = (typeof Deno !== 'undefined' && Deno.env && Deno.env.get('CAPTCHA_PROVIDER')) || 'off';
+  const provider = ['turnstile', 'recaptcha', 'off'].includes(providerEnv.toLowerCase()) ? providerEnv.toLowerCase() : 'off';
   const turnstileSecret = (typeof Deno !== 'undefined' && Deno.env && Deno.env.get('TURNSTILE_SECRET_KEY')) || '';
   const turnstileEnforceRaw = (typeof Deno !== 'undefined' && Deno.env && Deno.env.get('TURNSTILE_ENFORCE')) || 'true';
   const turnstileEnforce = String(turnstileEnforceRaw).toLowerCase() !== 'false';
