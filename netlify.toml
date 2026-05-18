@@ -10,7 +10,7 @@
 
 [build.environment]
 # 固定 Node 版本，避免二进制依赖（如 sharp）在 Node 22 下编译耗时
-  NODE_VERSION = "20.12.2"
+  NODE_VERSION = "20"
 # 安装时减少无关输出与提示
   NPM_FLAGS = "--no-audit --no-fund --omit=optional"
   
@@ -129,12 +129,6 @@
 [[redirects]]
   from = "/og-image.png"
   to = "/src/assets/og-image.png"
-  status = 200
-
-# Netlify Functions 路径排除兜底重定向
-[[redirects]]
-  from = "/.netlify/functions/*"
-  to = "/.netlify/functions/:splat"
   status = 200
 
 # 处理SPA路由（兜底 404）
