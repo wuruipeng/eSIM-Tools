@@ -183,6 +183,9 @@ class GiffgaffApp {
 
       this.dom.showStatus('oauthStatus', '请在浏览器中打开授权链接并完成登录', 'success');
 
+      // 显示回调URL输入区域
+      this.dom.showElement('oauthCallbackSection');
+
       // 保存状态
       this.state.saveSession();
 
@@ -319,7 +322,7 @@ class GiffgaffApp {
       this.state.emailCodeRef = data.ref;
 
       this.dom.showStatus('emailStatus', '验证码已发送到您的邮箱', 'success');
-      this.dom.showElement('emailCodeSection');
+      this.dom.showElement('emailVerificationSection');
 
       this.state.saveSession();
 

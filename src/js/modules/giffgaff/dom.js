@@ -38,7 +38,7 @@ class DOMManager {
     this.elements.emailCode = document.getElementById('emailCode');
     this.elements.verifyEmailBtn = document.getElementById('verifyEmailBtn');
     this.elements.emailStatus = document.getElementById('emailStatus');
-    this.elements.emailCodeSection = document.getElementById('emailCodeSection');
+    this.elements.emailVerificationSection = document.getElementById('emailVerificationSection');
 
     // 会员信息相关
     this.elements.getMemberBtn = document.getElementById('getMemberBtn');
@@ -53,7 +53,7 @@ class DOMManager {
     this.elements.tokenStatus = document.getElementById('tokenStatus');
 
     // 结果显示
-    this.elements.resultSection = document.getElementById('resultSection');
+    this.elements.resultContainer = document.getElementById('resultContainer');
     this.elements.qrcode = document.getElementById('qrcode');
     this.elements.lpaString = document.getElementById('lpaString');
 
@@ -321,9 +321,9 @@ class DOMManager {
     }
 
     // 显示结果区域
-    const resultSection = document.getElementById('resultSection');
-    if (resultSection) {
-      resultSection.style.display = 'block';
+    const resultContainer = document.getElementById('resultContainer');
+    if (resultContainer) {
+      resultContainer.style.display = 'block';
     }
   }
 
