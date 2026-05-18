@@ -168,9 +168,6 @@ class DOMManager {
 
     // 显示对应的内容区域
     this.showSection(stepNumber);
-
-    // 滚动到顶部
-    window.scrollTo(0, 0);
   }
 
   /**

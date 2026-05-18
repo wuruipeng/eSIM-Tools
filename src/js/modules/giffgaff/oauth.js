@@ -12,33 +12,6 @@ class OAuthManager {
       redirectUri: "giffgaff://auth/callback/",
       tokenEndpoint: "/bff/giffgaff-token-exchange"
     };
-
-    this.getTurnstileToken = () => {
-      try {
-        if (typeof window !== 'undefined') {
-          return window.__captchaToken || window.__cfTurnstileToken || undefined;
-        }
-      } catch { return undefined; }
-    };
-
-    this.refreshTurnstileToken = () => {
-      try {
-        if (typeof window === 'undefined') { return false; }
-        if (typeof window.__esimTurnstileRefresh === 'function') {
-          return window.__esimTurnstileRefresh();
-        }
-        if (window.turnstile && typeof window.turnstile.execute === 'function' && window.__turnstileWidgetId != null) {
-          try { window.turnstile.reset(window.__turnstileWidgetId); } catch (_) {}
-          try {
-            window.turnstile.execute(window.__turnstileWidgetId);
-            return true;
-          } catch (_) {}
-        }
-      } catch (err) {
-        Logger.warn('刷新 Turnstile token 失败', err);
-      }
-      return false;
-    };
   }
 
   /**
@@ -96,7 +69,7 @@ class OAuthManager {
   async buildAuthorizationUrl(codeVerifier, stateOverride) {
     const codeChallenge = await this.generateCodeChallenge(codeVerifier);
     const state = stateOverride || this.generateState();
-    
+
     const authParams = new URLSearchParams({
       response_type: 'code',
       client_id: this.config.clientId,
@@ -106,7 +79,7 @@ class OAuthManager {
       code_challenge: codeChallenge,
       code_challenge_method: 'S256'
     });
-    
+
     return `${this.config.authUrl}?${authParams.toString()}`;
   }
 
@@ -118,7 +91,7 @@ class OAuthManager {
   extractCodeFromCallback(callbackUrl) {
     try {
       let code = null;
-      
+
       if (callbackUrl.startsWith('giffgaff://')) {
         // 处理giffgaff://协议的回调URL
         const match = callbackUrl.match(/[?&]code=([^&]+)/);
@@ -128,7 +101,7 @@ class OAuthManager {
         const url = new URL(callbackUrl);
         code = url.searchParams.get('code');
       }
-      
+
       return code;
     } catch (error) {
       console.error('Failed to parse callback URL:', error);
@@ -145,30 +118,13 @@ class OAuthManager {
   // 前端不再直接持有 client_secret，改由服务端函数代为交换
   async exchangeToken(code, codeVerifier) {
     Logger.log(`Sending token exchange request: code=${code.substring(0, 3)}*****, code_verifier=${codeVerifier.substring(0, 3)}*****`);
-    // 等待 Turnstile token（最多等待 ~2.5s）
-    let tsToken = this.getTurnstileToken();
-    if (!tsToken) {
-      this.refreshTurnstileToken();
-    }
-    for (let i = 0; i < 5 && !tsToken; i++) {
-      await new Promise(r => setTimeout(r, 500));
-      tsToken = this.getTurnstileToken();
-      if (!tsToken) {
-        this.refreshTurnstileToken();
-      }
-    }
-    if (!tsToken) {
-      const lastErr = (typeof window !== 'undefined' && window.__lastTurnstileError) || 'unknown';
-      Logger.warn(`Turnstile token 仍未获取，最后错误: ${lastErr}`);
-    }
     const res = await fetch(this.config.tokenEndpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        code, 
-        code_verifier: codeVerifier, 
-        redirect_uri: this.config.redirectUri,
-        turnstileToken: tsToken
+      body: JSON.stringify({
+        code,
+        code_verifier: codeVerifier,
+        redirect_uri: this.config.redirectUri
       })
     });
     if (!res.ok) {
