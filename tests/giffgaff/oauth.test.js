@@ -136,7 +136,7 @@ describe('Giffgaff OAuthManager', () => {
 
       expect(result).toEqual(mockResponse);
       expect(global.fetch).toHaveBeenCalledWith(
-        '/.netlify/functions/giffgaff-token-exchange',
+        '/bff/giffgaff-token-exchange',
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({ 'Content-Type': 'application/json' }),

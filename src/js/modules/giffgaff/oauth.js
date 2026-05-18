@@ -10,7 +10,7 @@ class OAuthManager {
       clientId: "4a05bf219b3985647d9b9a3ba610a9ce",
       authUrl: "https://id.giffgaff.com/oauth/authorize",
       redirectUri: "giffgaff://auth/callback/",
-      tokenEndpoint: "/.netlify/functions/giffgaff-token-exchange"
+      tokenEndpoint: "/bff/giffgaff-token-exchange"
     };
 
     this.getTurnstileToken = () => {
