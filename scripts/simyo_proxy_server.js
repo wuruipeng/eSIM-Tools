@@ -13,11 +13,15 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 /**
- * 日志安全：过滤换行符，防止日志注入攻击
+ * 日志安全：过滤危险字符，防止日志注入攻击
+ * 过滤换行符、制表符和其他控制字符
  */
 function sanitizeLog(value) {
   if (typeof value !== 'string') return String(value);
-  return value.replace(/[\r\n]/g, '_');
+  return value
+    .replace(/[\r\n\t]/g, '_')
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+    .slice(0, 200); // 限制长度防止日志膨胀
 }
 
 /**
@@ -51,6 +55,34 @@ const SIMYO_CONFIG = {
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
+
+// 简单的内存速率限制（开发环境使用）
+const rateLimitStore = new Map();
+function rateLimit(windowMs = 60000, maxRequests = 100) {
+  return (req, res, next) => {
+    const key = req.ip;
+    const now = Date.now();
+    const windowStart = now - windowMs;
+
+    // 清理过期记录
+    const requests = (rateLimitStore.get(key) || []).filter(t => t > windowStart);
+
+    if (requests.length >= maxRequests) {
+      return res.status(429).json({
+        success: false,
+        error: 'RATE_LIMIT_EXCEEDED',
+        message: '请求过于频繁，请稍后重试'
+      });
+    }
+
+    requests.push(now);
+    rateLimitStore.set(key, requests);
+    next();
+  };
+}
+
+// 应用速率限制到 API 路由
+app.use('/api/', rateLimit(60000, 100));
 
 // 日志中间件
 app.use((req, res, next) => {
@@ -149,7 +181,11 @@ app.get('/api/simyo/esim', async (req, res) => {
 
         console.log(`获取eSIM信息，会话令牌: ${sanitizeLog(sessionToken.substring(0, 10))}...`);
 
-        const response = await fetch(`${SIMYO_CONFIG.baseUrl}/esim/get-by-customer`, {
+        const esimUrl = `${SIMYO_CONFIG.baseUrl}/esim/get-by-customer`;
+        if (!isAllowedTarget(esimUrl)) {
+          return res.status(500).json({ success: false, error: 'INVALID_TARGET' });
+        }
+        const response = await fetch(esimUrl, {
             method: 'GET',
             headers: createProxyHeaders(sessionToken)
         });
@@ -201,7 +237,11 @@ app.get('/api/simyo/esim/get-by-customer', async (req, res) => {
 
         console.log(`获取eSIM信息 (get-by-customer)，会话令牌: ${sanitizeLog(sessionToken.substring(0, 10))}...`);
 
-        const response = await fetch(`${SIMYO_CONFIG.baseUrl}/esim/get-by-customer`, {
+        const esimUrl2 = `${SIMYO_CONFIG.baseUrl}/esim/get-by-customer`;
+        if (!isAllowedTarget(esimUrl2)) {
+          return res.status(500).json({ success: false, error: 'INVALID_TARGET' });
+        }
+        const response = await fetch(esimUrl2, {
             method: 'GET',
             headers: createProxyHeaders(sessionToken)
         });
@@ -368,7 +408,11 @@ app.post('/api/simyo/esim/reorder-profile-installed', async (req, res) => {
 
         console.log(`确认eSIM安装，会话令牌: ${sanitizeLog(sessionToken.substring(0, 10))}...`);
 
-        const response = await fetch(`${SIMYO_CONFIG.baseUrl}/esim/reorder-profile-installed`, {
+        const reorderUrl = `${SIMYO_CONFIG.baseUrl}/esim/reorder-profile-installed`;
+        if (!isAllowedTarget(reorderUrl)) {
+          return res.status(500).json({ success: false, error: 'INVALID_TARGET' });
+        }
+        const response = await fetch(reorderUrl, {
             method: 'POST',
             headers: createProxyHeaders(sessionToken)
         });
