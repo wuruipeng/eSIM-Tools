@@ -1,14 +1,11 @@
 /**
  * Simyo eSIM 工具 - 主入口文件
- * 
+ *
  * 这个文件负责初始化 Simyo eSIM 管理应用
  * 所有业务逻辑已经模块化到 modules/simyo/ 目录下
  */
 
-// 导入样式
-import '../styles/design-system.css';
-import '../styles/animations.css';
-import '../styles/mobile-responsive.css';
+// 注意：样式通过 HTML <link> 标签加载，不在 JS 中导入（避免 MIME 类型错误）
 
 // Sentry 错误监控（必须尽早初始化以捕获所有错误）
 import './modules/sentry-init.js';

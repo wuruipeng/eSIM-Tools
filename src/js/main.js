@@ -1,7 +1,5 @@
 // 主入口文件
-import '../styles/design-system.css';
-import '../styles/animations.css';
-import '../styles/mobile-responsive.css';
+// 注意：样式通过 HTML <link> 标签加载，不在 JS 中导入（避免 MIME 类型错误）
 
 // Sentry 错误监控（必须尽早初始化以捕获所有错误）
 import './modules/sentry-init.js';
