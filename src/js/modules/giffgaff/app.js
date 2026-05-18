@@ -173,10 +173,6 @@ class GiffgaffApp {
       this.state.oauthState = this.oauth.generateState();
       const authUrl = await this.oauth.buildAuthorizationUrl(this.state.codeVerifier, this.state.oauthState);
 
-      // 显示授权 URL
-      this.dom.setValue('authUrlDisplay', authUrl);
-      this.dom.showElement('authUrlContainer');
-
       // 自动在新窗口打开授权链接
       window.open(authUrl, '_blank');
 
