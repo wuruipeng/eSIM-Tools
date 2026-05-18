@@ -108,6 +108,40 @@ class GiffgaffApp {
     this.dom.bindButtonClick('smsInlineSendBtn', () => this.handleSmsSend());
     this.dom.bindButtonClick('smsInlineVerifyBtn', () => this.handleSmsVerify());
 
+    // 短信激活卡片：点击展开内联区域
+    const smsCard = document.getElementById('smsActivateCard');
+    if (smsCard) {
+      smsCard.addEventListener('click', () => {
+        const section = document.getElementById('smsInlineSection');
+        if (section) section.style.display = 'block';
+      });
+    }
+
+    // 已有激活码切换按钮
+    const manualToggle = document.getElementById('manualEsimInputToggle');
+    if (manualToggle) {
+      manualToggle.addEventListener('click', () => {
+        const section = document.getElementById('manualEsimInputSection');
+        if (section) section.style.display = section.style.display === 'none' ? 'block' : 'none';
+      });
+    }
+
+    // 确认手动激活完成，进入下一步
+    this.dom.bindButtonClick('confirmActivationBtn', () => {
+      this.state.currentStep = 5;
+      this.state.saveSession();
+      this.dom.navigateToStep(5);
+    });
+
+    // 复制控制台代码片段
+    this.dom.bindButtonClick('copyConsoleSnippetBtn', () => {
+      const snippet = document.getElementById('cookieConsoleSnippet');
+      if (snippet) {
+        this.utils.copyToClipboard(snippet.textContent.trim());
+        this.utils.showToast('代码已复制到剪贴板');
+      }
+    });
+
     // 手动 eSIM 保存
     this.dom.bindButtonClick('manualSaveAndNextBtn', () => this.handleManualEsimSave());
 
