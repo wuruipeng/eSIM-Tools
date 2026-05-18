@@ -386,30 +386,21 @@ class SimyoApp {
   /**
    * 显示 Toast 通知
    */
-  showToast(message) {
+  showToast(message, duration = 3000) {
     const toast = document.createElement('div');
     toast.className = 'toast-notification';
     toast.textContent = message;
-    toast.style.cssText = `
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #333;
-      color: white;
-      padding: 12px 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-      z-index: 10000;
-      animation: slideUp 0.3s ease-out;
-    `;
 
     document.body.appendChild(toast);
 
+    requestAnimationFrame(() => {
+      toast.classList.add('show');
+    });
+
     setTimeout(() => {
-      toast.style.animation = 'slideDown 0.3s ease-out';
+      toast.classList.remove('show');
       setTimeout(() => toast.remove(), 300);
-    }, 3000);
+    }, duration);
   }
 
   /**

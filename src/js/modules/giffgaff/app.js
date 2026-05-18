@@ -177,6 +177,9 @@ class GiffgaffApp {
       this.dom.setValue('authUrlDisplay', authUrl);
       this.dom.showElement('authUrlContainer');
 
+      // 自动在新窗口打开授权链接
+      window.open(authUrl, '_blank');
+
       // 自动复制到剪贴板
       await this.utils.copyToClipboard(authUrl);
       this.utils.showToast('授权链接已复制到剪贴板');
